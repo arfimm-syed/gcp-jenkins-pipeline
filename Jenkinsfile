@@ -44,7 +44,8 @@ pipeline {
 
         stage('Terraform Apply') {
             when {
-                branch 'main'
+            // Triggers when a Pull Request target branch is 'main'
+                changeRequest target: 'main'
             }
             steps {
                 input message: 'Approve Terraform Apply?'
