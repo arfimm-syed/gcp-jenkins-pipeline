@@ -1,0 +1,23 @@
+# Terraform
+.terraform/
+**/.terraform/
+
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Terraform provider binaries
+terraform-provider-*
+
+# Terraform plans
+*.tfplan
+*.plan
+
+# Sensitive files
+# *.tfvars
+*.tfvars.json
+
+# Secrets
+*.key
+*.pem
+*.json
