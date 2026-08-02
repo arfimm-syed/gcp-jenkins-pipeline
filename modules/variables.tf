@@ -3,12 +3,12 @@ variable "project_id" {
   type        = string
 }
  
-variable "my_bucket"{
+variable "my_bucket" {
   description = "The name of the storage bucket."
-  type        = map(object({
-    name     = string
-    location = string
-    force_destroy = bool
+  type = map(object({
+    name          = string
+    location      = string
+    uniform_bucket_level_access = bool
   }))
 }
 
