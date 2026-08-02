@@ -15,7 +15,7 @@ pipeline {
             }
         }
 
-        stage('Authenticate to GCP') {
+        stage('Authenticate to GCP CLI') {
             steps {
                 sh '''
                     gcloud auth list
@@ -25,58 +25,41 @@ pipeline {
             }
         }
 
-        stage('Terraform Init') {
+        stage('Terraform Setup & Plan') {
             steps {
                 dir('env') {
-                    sh 'terraform init'
-                }
-            }
-        }
-
-        stage('Terraform Format Check') {
-            steps {
-                dir('env') {
-                    sh 'terraform fmt -check'
-                }
-            }
-        }
-
-        stage('Terraform Validate') {
-            steps {
-                dir('env') {
-                    sh 'terraform validate'
-                }
-            }
-        }
-
-        stage('Terraform Plan') {
-            steps {
-                dir('env') {
-                    sh 'terraform plan -out=tfplan'
+                    // Copy the credentials into the active terraform directory
+                    sh 'cp /mnt/c/Users/afzal/Downloads/clientLibraryConfig-jenkins-provider.json .'
+                    
+                    // Set environment variable and run the core validation and planning steps
+                    withEnv(["GOOGLE_APPLICATION_CREDENTIALS=${WORKSPACE}/env/clientLibraryConfig-jenkins-provider.json"]) {
+                        sh 'terraform init'
+                        sh 'terraform fmt -check'
+                        sh 'terraform validate'
+                        sh 'terraform plan -out=tfplan'
+                    }
                 }
             }
         }
 
         stage('Terraform Apply') {
-
             when {
                 branch 'main'
             }
-
             steps {
-
                 input message: 'Approve Terraform Apply?'
-
+                
                 dir('env') {
-                    sh 'terraform apply -auto-approve tfplan'
+                    // Ensure credentials are also present for the apply step
+                    withEnv(["GOOGLE_APPLICATION_CREDENTIALS=${WORKSPACE}/env/clientLibraryConfig-jenkins-provider.json"]) {
+                        sh 'terraform apply -auto-approve tfplan'
+                    }
                 }
             }
         }
-
     }
 
     post {
-
         success {
             echo 'Terraform deployment completed successfully.'
         }
