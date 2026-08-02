@@ -44,8 +44,12 @@ pipeline {
 
         stage('Terraform Apply') {
             when {
-            // Triggers when a Pull Request target branch is 'main'
-                changeRequest target: 'main'
+                anyOf {
+                    // Triggers while the Pull Request is open
+                    changeRequest target: 'main'
+                    // Triggers immediately after you click merge on GitHub
+                    branch 'main'
+                }
             }
             steps {
                 input message: 'Approve Terraform Apply?'
