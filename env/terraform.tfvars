@@ -5,7 +5,7 @@ my_bucket = {
       location = "US"
       force_destroy = true
 
-  versioning {
+  versioning = {
     enabled = true
   }
 
