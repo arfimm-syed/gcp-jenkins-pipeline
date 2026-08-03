@@ -5,10 +5,10 @@ terraform {
       version = "7.42.0"
     }
   }
-  # backend "gcs" {
-  #   bucket = "arfimm-terraform-state"
-  #   prefix = "terraform/state"
-  # }
+  backend "gcs" {
+    bucket = "arfimm-bucket"
+    prefix = "terraform/state"
+  }
 
 }
 
