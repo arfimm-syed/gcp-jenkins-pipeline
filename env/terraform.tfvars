@@ -1,7 +1,7 @@
 project_id = "gcp-jenkins-pipeline"
 my_bucket = {
   bucket1 = {
-    name                        = "my-unique-bucket-name"
+    name                        = "arfimm-bucket"
     location                    = "US"
     uniform_bucket_level_access = true
   }
