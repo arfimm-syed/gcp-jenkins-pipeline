@@ -43,3 +43,17 @@ resource "google_container_node_pool" "dynamic_nodes" {
 
   depends_on = [google_project_iam_member.node_permissions]
 }
+
+resource "google_project_service" "container_api" {
+  project            = "gcp-jenkins-pipeline"
+  service            = "container.googleapis.com"
+  disable_on_destroy = false
+}
+
+# Add a dependency line inside your cluster resource block so it waits for the API:
+resource "google_container_cluster" "primary" {
+  name       = "my-gke-cluster"
+  location   = "us-central1"
+  depends_on = [google_project_service.container_api]
+  # ... your other configuration settings ...
+}
