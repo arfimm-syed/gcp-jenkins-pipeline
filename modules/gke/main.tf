@@ -22,6 +22,8 @@ resource "google_container_cluster" "primary" {
 
   remove_default_node_pool = true
   initial_node_count       = 1
+
+  depends_on = [google_project_service.container_api]
 }
 
 # 4. Dynamic Node Pool Creation
@@ -43,3 +45,12 @@ resource "google_container_node_pool" "dynamic_nodes" {
 
   depends_on = [google_project_iam_member.node_permissions]
 }
+
+resource "google_project_service" "container_api" {
+  project            = "gcp-jenkins-pipeline"
+  service            = "container.googleapis.com"
+  disable_on_destroy = false
+}
+
+
+
