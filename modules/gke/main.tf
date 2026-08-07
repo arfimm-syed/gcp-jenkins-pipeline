@@ -22,6 +22,8 @@ resource "google_container_cluster" "primary" {
 
   remove_default_node_pool = true
   initial_node_count       = 1
+
+  depends_on = [google_project_service.container_api]
 }
 
 # 4. Dynamic Node Pool Creation
@@ -50,10 +52,5 @@ resource "google_project_service" "container_api" {
   disable_on_destroy = false
 }
 
-# Add a dependency line inside your cluster resource block so it waits for the API:
-resource "google_container_cluster" "primary" {
-  name       = "my-gke-cluster"
-  location   = "us-central1"
-  depends_on = [google_project_service.container_api]
-  # ... your other configuration settings ...
-}
+
+
