@@ -40,7 +40,9 @@ resource "google_container_node_pool" "dynamic_nodes" {
     machine_type = each.value.machine_type
 
     service_account = google_service_account.default.email
-    oauth_scopes    = ["https://googleapis.com"]
+    oauth_scopes = [
+  "https://www.googleapis.com/auth/cloud-platform"
+]
   }
 
   depends_on = [google_project_iam_member.node_permissions]
