@@ -8,7 +8,7 @@ my_bucket = {
 }
 
 
-region = "us-central1"
+region = "us-central1-a"
 
 gke_node_roles = [
   "roles/logging.logWriter",
