@@ -1,3 +1,4 @@
+```groovy
 pipeline {
 
     agent any
@@ -5,9 +6,6 @@ pipeline {
     environment {
         PROJECT_ID       = "gcp-jenkins-pipeline"
         TF_IN_AUTOMATION = "true"
-
-        // WIF external account credential configuration
-        GOOGLE_APPLICATION_CREDENTIALS = "/var/lib/jenkins/gcp-wif.json"
     }
 
     stages {
@@ -20,53 +18,87 @@ pipeline {
 
         stage('GCP Authentication') {
             steps {
-               withCredentials([
-             string(
-                credentialsId: 'gcp-token',
-                variable: 'GOOGLE_OAUTH_ACCESS_TOKEN'
-            )
-        ]) {
-            sh '''
-                set -e
 
-                echo "Testing GCP authentication..."
+                withCredentials([
+                    string(
+                        credentialsId: 'gcp-token',
+                        variable: 'GOOGLE_OAUTH_ACCESS_TOKEN'
+                    )
+                ]) {
 
-                export CLOUDSDK_AUTH_ACCESS_TOKEN="$GOOGLE_OAUTH_ACCESS_TOKEN"
-
-                echo "Testing project access..."
-                gcloud projects describe "$PROJECT_ID" \
-                    --format="value(projectId)"
-
-                echo "Testing Terraform bucket..."
-                gcloud storage ls gs://arfimm-bucket
-
-                echo "GCP authentication successful."
-            '''
-        }
-    }
-}
-
-        stage('Terraform Init') {
-            steps {
-                dir('env') {
                     sh '''
                         set -e
 
                         echo "========================================"
-                        echo "Terraform Init"
+                        echo "GCP Authentication"
                         echo "========================================"
 
-                        terraform init \
-                            -input=false \
-                            -reconfigure
+                        # Use the OAuth access token stored in Jenkins.
+                        export CLOUDSDK_AUTH_ACCESS_TOKEN="$GOOGLE_OAUTH_ACCESS_TOKEN"
+                        export GOOGLE_OAUTH_ACCESS_TOKEN="$GOOGLE_OAUTH_ACCESS_TOKEN"
+
+                        # Make sure the old WIF configuration is not used.
+                        unset GOOGLE_APPLICATION_CREDENTIALS
+
+                        echo ""
+                        echo "Testing GCP project access..."
+
+                        gcloud projects describe "$PROJECT_ID" \
+                            --format="value(projectId)"
+
+                        echo ""
+                        echo "Testing Terraform state bucket..."
+
+                        gcloud storage ls gs://arfimm-bucket
+
+                        echo ""
+                        echo "GCP authentication successful."
                     '''
+                }
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+
+                withCredentials([
+                    string(
+                        credentialsId: 'gcp-token',
+                        variable: 'GOOGLE_OAUTH_ACCESS_TOKEN'
+                    )
+                ]) {
+
+                    dir('env') {
+
+                        sh '''
+                            set -e
+
+                            echo "========================================"
+                            echo "Terraform Init"
+                            echo "========================================"
+
+                            export CLOUDSDK_AUTH_ACCESS_TOKEN="$GOOGLE_OAUTH_ACCESS_TOKEN"
+                            export GOOGLE_OAUTH_ACCESS_TOKEN="$GOOGLE_OAUTH_ACCESS_TOKEN"
+
+                            unset GOOGLE_APPLICATION_CREDENTIALS
+
+                            terraform init \
+                                -input=false \
+                                -reconfigure
+
+                            echo ""
+                            echo "Terraform init completed successfully."
+                        '''
+                    }
                 }
             }
         }
 
         stage('Terraform Format') {
             steps {
+
                 dir('env') {
+
                     sh '''
                         set -e
 
@@ -75,6 +107,9 @@ pipeline {
                         echo "========================================"
 
                         terraform fmt -check -recursive
+
+                        echo ""
+                        echo "Terraform format check passed."
                     '''
                 }
             }
@@ -82,42 +117,76 @@ pipeline {
 
         stage('Terraform Validate') {
             steps {
-                dir('env') {
-                    sh '''
-                        set -e
 
-                        echo "========================================"
-                        echo "Terraform Validate"
-                        echo "========================================"
+                withCredentials([
+                    string(
+                        credentialsId: 'gcp-token',
+                        variable: 'GOOGLE_OAUTH_ACCESS_TOKEN'
+                    )
+                ]) {
 
-                        terraform validate
-                    '''
+                    dir('env') {
+
+                        sh '''
+                            set -e
+
+                            echo "========================================"
+                            echo "Terraform Validate"
+                            echo "========================================"
+
+                            export CLOUDSDK_AUTH_ACCESS_TOKEN="$GOOGLE_OAUTH_ACCESS_TOKEN"
+                            export GOOGLE_OAUTH_ACCESS_TOKEN="$GOOGLE_OAUTH_ACCESS_TOKEN"
+
+                            unset GOOGLE_APPLICATION_CREDENTIALS
+
+                            terraform validate
+
+                            echo ""
+                            echo "Terraform validation passed."
+                        '''
+                    }
                 }
             }
         }
 
         stage('Terraform Plan') {
             steps {
-                dir('env') {
-                    sh '''
-                        set -e
 
-                        echo "========================================"
-                        echo "Terraform Plan"
-                        echo "========================================"
+                withCredentials([
+                    string(
+                        credentialsId: 'gcp-token',
+                        variable: 'GOOGLE_OAUTH_ACCESS_TOKEN'
+                    )
+                ]) {
 
-                        terraform plan \
-                            -input=false \
-                            -out=tfplan
+                    dir('env') {
 
-                        echo ""
-                        echo "Terraform plan completed successfully."
-                    '''
+                        sh '''
+                            set -e
+
+                            echo "========================================"
+                            echo "Terraform Plan"
+                            echo "========================================"
+
+                            export CLOUDSDK_AUTH_ACCESS_TOKEN="$GOOGLE_OAUTH_ACCESS_TOKEN"
+                            export GOOGLE_OAUTH_ACCESS_TOKEN="$GOOGLE_OAUTH_ACCESS_TOKEN"
+
+                            unset GOOGLE_APPLICATION_CREDENTIALS
+
+                            terraform plan \
+                                -input=false \
+                                -out=tfplan
+
+                            echo ""
+                            echo "Terraform plan completed successfully."
+                        '''
+                    }
                 }
             }
         }
 
         stage('Terraform Apply') {
+
             when {
                 branch 'main'
             }
@@ -126,44 +195,44 @@ pipeline {
 
                 input message: 'Terraform plan completed. Approve infrastructure deployment?'
 
-                dir('env') {
-                    sh '''
-                        set -e
+                withCredentials([
+                    string(
+                        credentialsId: 'gcp-token',
+                        variable: 'GOOGLE_OAUTH_ACCESS_TOKEN'
+                    )
+                ]) {
 
-                        echo "========================================"
-                        echo "Refreshing GCP WIF authentication"
-                        echo "========================================"
+                    dir('env') {
 
-                        # Refresh gcloud authentication after manual approval.
-                        # This obtains fresh short-lived credentials.
-                        gcloud auth login \
-                            --cred-file="$GOOGLE_APPLICATION_CREDENTIALS" \
-                            --quiet
+                        sh '''
+                            set -e
 
-                        gcloud config set project "$PROJECT_ID"
+                            echo "========================================"
+                            echo "Terraform Apply"
+                            echo "========================================"
 
-                        echo ""
-                        echo "Authenticated identity:"
-                        gcloud auth list
+                            export CLOUDSDK_AUTH_ACCESS_TOKEN="$GOOGLE_OAUTH_ACCESS_TOKEN"
+                            export GOOGLE_OAUTH_ACCESS_TOKEN="$GOOGLE_OAUTH_ACCESS_TOKEN"
 
-                        echo ""
-                        echo "Testing backend access before apply..."
+                            unset GOOGLE_APPLICATION_CREDENTIALS
 
-                        gcloud storage ls gs://arfimm-bucket
+                            echo ""
+                            echo "Testing GCP backend access..."
 
-                        echo ""
-                        echo "========================================"
-                        echo "Terraform Apply"
-                        echo "========================================"
+                            gcloud storage ls gs://arfimm-bucket
 
-                        terraform apply \
-                            -input=false \
-                            -auto-approve \
-                            tfplan
+                            echo ""
+                            echo "Applying Terraform plan..."
 
-                        echo ""
-                        echo "Terraform apply completed successfully."
-                    '''
+                            terraform apply \
+                                -input=false \
+                                -auto-approve \
+                                tfplan
+
+                            echo ""
+                            echo "Terraform apply completed successfully."
+                        '''
+                    }
                 }
             }
         }
@@ -184,3 +253,4 @@ pipeline {
         }
     }
 }
+```
