@@ -6,3 +6,19 @@ my_bucket = {
     uniform_bucket_level_access = true
   }
 }
+
+
+region = "us-central1"
+
+gke_node_roles = [
+  "roles/logging.logWriter",
+  "roles/monitoring.metricWriter"
+]
+
+node_pools = {
+  "playground-pool" = {
+    node_count   = 1
+    machine_type = "e2-medium"
+    preemptible  = true
+  }
+}

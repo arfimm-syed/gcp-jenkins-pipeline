@@ -11,3 +11,14 @@ variable "my_bucket" {
     uniform_bucket_level_access = bool
   }))
 }
+
+
+variable "region" { type = string }
+variable "gke_node_roles" { type = set(string) }
+variable "node_pools" {
+  type = map(object({
+    node_count   = number
+    machine_type = string
+    preemptible  = bool
+  }))
+}
