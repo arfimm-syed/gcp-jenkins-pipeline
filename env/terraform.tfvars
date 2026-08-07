@@ -18,7 +18,7 @@ gke_node_roles = [
 node_pools = {
   "playground-pool" = {
     node_count   = 1
-    machine_type = "e2-medium"
+    machine_type = "e2-standard-2"
     preemptible  = true
   }
 }

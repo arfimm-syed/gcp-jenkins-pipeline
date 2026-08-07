@@ -111,24 +111,26 @@ pipeline {
             }
         }
 
+
         stage('Terraform Apply') {
             when {
-                anyOf {
-                    changeRequest target: 'main'
-                    branch 'main'
-                }
-            }
-            steps {
-                input message: 'Approve Terraform Apply?'
-                
+               anyOf {
+                  changeRequest target: 'main'
+                  branch 'main'
+        }
+    }
+        steps {
+            // 1. Pause for human approval FIRST. Token time will not waste while waiting.
+            input message: 'Approve Terraform Apply?'
+        
                 dir('env') {
-                    withCredentials([string(credentialsId: 'gcp-token', variable: 'GOOGLE_OAUTH_ACCESS_TOKEN')]) {
-                        sh 'terraform apply -auto-approve'
-                    }
-                }
+                // 2. Fetch a brand new, fresh token the exact second "Proceed" is clicked.
+                    withEnv(["GOOGLE_OAUTH_ACCESS_TOKEN=\$(gcloud auth print-access-token)"]) {
+                         sh 'terraform apply -auto-approve'
             }
         }
     }
+}
 
     post {
         success {
