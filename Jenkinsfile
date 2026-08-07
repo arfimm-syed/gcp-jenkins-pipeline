@@ -18,48 +18,33 @@ pipeline {
             }
         }
 
-        stage('Authenticate to GCP') {
+        stage('GCP Authentication') {
             steps {
-                sh '''
-                    set -e
+               withCredentials([
+             string(
+                credentialsId: 'gcp-token',
+                variable: 'GOOGLE_OAUTH_ACCESS_TOKEN'
+            )
+        ]) {
+            sh '''
+                set -e
 
-                    echo "========================================"
-                    echo "GCP Workload Identity Authentication"
-                    echo "========================================"
+                echo "Testing GCP authentication..."
 
-                    if [ ! -f "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
-                        echo "ERROR: WIF credential file does not exist:"
-                        echo "$GOOGLE_APPLICATION_CREDENTIALS"
-                        exit 1
-                    fi
+                export CLOUDSDK_AUTH_ACCESS_TOKEN="$GOOGLE_OAUTH_ACCESS_TOKEN"
 
-                    echo "WIF credential file found."
+                echo "Testing project access..."
+                gcloud projects describe "$PROJECT_ID" \
+                    --format="value(projectId)"
 
-                    # Authenticate gcloud using the WIF credential
-                    gcloud auth login \
-                        --cred-file="$GOOGLE_APPLICATION_CREDENTIALS" \
-                        --quiet
+                echo "Testing Terraform bucket..."
+                gcloud storage ls gs://arfimm-bucket
 
-                    gcloud config set project "$PROJECT_ID"
-
-                    echo ""
-                    echo "Authenticated identity:"
-                    gcloud auth list
-
-                    echo ""
-                    echo "Active project:"
-                    gcloud config get-value project
-
-                    echo ""
-                    echo "Testing GCP access..."
-
-                    gcloud storage ls gs://arfimm-bucket
-
-                    echo ""
-                    echo "GCP authentication successful."
-                '''
-            }
+                echo "GCP authentication successful."
+            '''
         }
+    }
+}
 
         stage('Terraform Init') {
             steps {
