@@ -123,7 +123,7 @@ pipeline {
                 
                 dir('env') {
                     withCredentials([string(credentialsId: 'gcp-token', variable: 'GOOGLE_OAUTH_ACCESS_TOKEN')]) {
-                        sh 'terraform apply -auto-approve tfplan'
+                        sh 'terraform apply -auto-approve'
                     }
                 }
             }
